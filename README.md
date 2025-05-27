@@ -25,12 +25,8 @@ Se centra en la ciudad de Reynosa, Tamaulipas, México, con el objetivo de **ide
 ## 🔒 Sobre el código y outputs
 
 - El **archivo `analisis_agebs_reynosa.Rmd`** contiene el flujo completo del análisis en R.
-- **No se incluyen datos crudos ni procesados**; solo outputs visuales en la carpeta `/images`.
+- **No se incluyen datos crudos ni procesados**; solo outputs visuales en la carpeta `/Ventas_AGEBS`.
 - Si deseas reproducir el flujo, puedes consultar el código, adaptando tus propios datos.
-
----
-
-## 📋 Estructura del repositorio
 
 ---
 
@@ -106,7 +102,8 @@ leaflet(data) %>%
   addProviderTiles(providers$OpenStreetMap) %>%
   addCircleMarkers(lng = ~longitud, lat = ~latitud, radius = ~sqrt(valor)/10)
 ```
-🚀 Reflexiones, aprendizajes y proceso autodidacta
+🚀 Reflexiones, aprendizajes y proceso de exploración autodidacta
+
 Este proyecto es iniciativa personal y ejemplo de aprendizaje autodidacta, sin experiencia previa formal en machine learning ni desarrollo avanzado de visualizaciones en R.
 
 El flujo completo fue posible gracias al apoyo de inteligencia artificial generativa (ChatGPT, Claude), investigación, y la integración de recursos modernos (APIs, librerías R).
