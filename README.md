@@ -1,6 +1,11 @@
 # Venta-Geoespacial
 Análisis geoespacial de AGEBs en Reynosa para identificar ubicaciones óptimas de sucursales usando clustering K-means y datos socioeconómicos
 
+## 🔗 Proyecto relacionado
+
+Este análisis es una **continuación del primer repositorio** sobre el análisis demográfico del censo de población y vivienda en Reynosa, disponible aquí:  
+[Análisis Demográfico Reynosa](https://github.com/mreyes-analytics/analisis-censo-reynosa)
+
 ---
 
 ## ⚠️ Confidencialidad y naturaleza de los datos
