@@ -1,0 +1,969 @@
+---
+title: "Análisis de Geoventas Y Visualización de AGEBs Potenciales"
+author: "Departamento de Proyectos Especiales"
+date: "2025-03-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_knit$set(root.dir = "C:/Users/Miguel Reyes/Desktop/Supply Chain Data Science Project")
+
+local({
+  r <- getOption("repos")
+  r["CRAN"] <- "https://cloud.r-project.org/"
+  options(repos = r)
+})
+
+# Instala kableExtra si no está instalado
+if (!requireNamespace("kableExtra", quietly = TRUE)) {
+  install.packages("kableExtra")
+}
+library(kableExtra)
+
+library(tidyverse)
+library(sf)
+library(ggplot2)
+library(leaflet)
+library(kableExtra)
+library(htmltools)  # Para mostrar múltiples mapas en RMarkdown
+library(shiny)
+library(dplyr)
+library(RColorBrewer)
+library(leaflet.extras)
+library(cluster)
+library(ggmap)
+
+
+```
+
+## Introducción
+
+Este análisis busca identificar las Áreas Geoestadísticas Básicas (AGEBs) con mayor potencial en Reynosa para influir en la toma de decisiones para el negocio, basándose en indicadores socioeconómicos y demográficos.
+
+Para ello, se tomaron datos relevantes del Censo de Población y Vivienda 2020 realizado por el INEGI, reduciendo el modelo a variables clave como:
+
+- Densidad de población
+- Total de viviendas
+- Tasa de ocupación de viviendas
+- Población económicamente activa
+- Promedio total de ocupantes 
+
+### Metodología de Análisis de Áreas Geoestadísticas Básicas (AGEBs)
+
+#### I. Estructura General del Score Total
+Para el puntaje otorgado se utiliza el Score Total el cuál se desarrolla integrando múltiples dimensiones para evaluar el desempeño y potencial de cada AGEB, ponderando siete componentes clave.
+
+#### II. Análisis de Vivienda: Fundamento del Nivel Socioeconómico
+
+El análisis de vivienda se constituye como un pilar fundamental para la determinación objetiva del nivel socioeconómico. Este componente evalúa múltiples variables que reflejan la calidad de vida y el potencial socioeconómico de un área:
+
+- Infraestructura básica de la vivienda
+- Espacios habitacionales
+- Bienes duraderos
+- Movilidad
+- Acceso a tecnología y entretenimiento
+
+A partir de estas variables, se construyeron cinco índices específicos que permiten una caracterización estadística robusta:
+
+1. **Índice de Infraestructura Básica (IIB)**
+2. **Índice de Espacio Habitacional (IEH)**
+3. **Índice de Bienes Duraderos (IBD)**
+4. **Índice de Movilidad (IM)**
+5. **Índice de Tecnología y Entretenimiento (ITE)**
+
+Estos índices, calculados mediante técnicas estadísticas rigurosas, proporcionan una base objetiva para determinar el nivel socioeconómico de cada AGEB, trascendiendo percepciones subjetivas y fundamentándose en evidencia cuantitativa.
+
+Capturando la complejidad socioeconómica de manera integral, se desarrolló un método sofisticado para la clasificación del Nivel Socioeconómico.
+
+### Análisis Estadístico para Estratificación Socioeconómica
+
+#### Comprensión de los Percentiles
+
+Los percentiles son una herramienta estadística que divide los datos en 100 partes iguales, permitiéndonos entender la distribución de los valores en un conjunto de datos. En nuestro análisis, utilizamos tres percentiles clave:
+
+- Percentil 25 (primer cuartil): El 25% de los datos están por debajo de este valor
+- Percentil 50 (mediana): El 50% de los datos están por debajo de este valor
+- Percentil 75 (tercer cuartil): El 75% de los datos están por debajo de este valor
+
+#### Metodología de Clasificación Socioeconómica
+
+Nuestra metodología de clasificación del Nivel Socioeconómico (NSE) se basa en una evaluación multidimensional de los cinco índices mencionados:
+
+1. Índice de Infraestructura Básica (IIB)
+2. Índice de Espacio Habitacional (IEH)
+3. Índice de Bienes Duraderos (IBD)
+4. Índice de Movilidad (IM)
+5. Índice de Tecnología y Entretenimiento (ITE)
+
+La clasificación se realiza mediante un enfoque de umbrales:
+
+| Nivel Socioeconómico | Criterio de Clasificación |
+|----------------------|---------------------------|
+| Clase Alta |          Supera el percentil 75 en TODOS los índices |
+| Clase Media Alta |    Supera el percentil 50 en TODOS los índices |
+| Clase Media |         Supera el percentil 25 en TODOS los índices |
+| Clase Baja |          No supera ninguno de los umbrales anteriores |
+
+#### Ejemplo Ilustrativo
+
+Consideremos un AGEB con los siguientes índices:
+- IIB: 0.75 (percentil 75)
+- IEH: 0.68 (percentil 50)
+- IBD: 0.72 (percentil 75)
+- IM: 0.55 (percentil 50)
+- ITE: 0.60 (percentil 50)
+
+En este caso, el AGEB se clasificaría como "Clase Media Alta" porque supera los percentiles 50 en la mayoría de los índices.
+
+#### Ventajas de este Enfoque
+
+1. **Relatividad**: La clasificación es relativa al conjunto de datos, no a valores absolutos predefinidos.
+2. **Multidimensionalidad**: Considera múltiples aspectos socioeconómicos simultáneamente.
+3. **Flexibilidad**: Se adapta a la variabilidad de los datos locales.
+
+#### Consideraciones Metodológicas
+
+- Los percentiles capturan la distribución de los datos sin ser afectados por valores extremos.
+- La clasificación requiere un rendimiento consistente en todos los índices.
+- Permite una visión holística del nivel socioeconómico de un área.
+
+Esta metodología nos permite identificar y caracterizar las áreas geoestadísticas básicas (AGEBs) en términos de su nivel socioeconómico, proporcionando una base sólida para análisis posteriores y toma de decisiones estratégicas.
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+# Crear el data frame
+score_components <- data.frame(
+  Componente = c("Score Población", "Score PEA",
+                 "Score Ocupación", "Score Viviendas", "Score Ocupantes",
+                 "Score NSE", "Score Potencial Mejoras"),
+  Porcentaje = c("15%", "18%", "12%", "12%", "8%", "20%", "15%")
+)
+
+
+# Formatear la tabla con kableExtra
+score_components %>%
+  kable(format = "html", digits = 2, align = "c", caption = "Componentes del Score Total") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+Este score integra tanto índices base, componentes demográficos y habitacionales, como el nivel socioeconómico.
+
+### II. Índices Base
+
+Los índices base evalúan distintos aspectos de la calidad de las viviendas y servicios.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(kableExtra)
+
+# Crear el data frame con los índices
+indices <- data.frame(
+  Indice = c("Índice de Infraestructura Básica (IIB)",
+             "Índice de Espacio Habitacional (IEH)",
+             "Índice de Bienes Duraderos (IBD)",
+             "Índice de Movilidad (IM)",
+             "Índice de Tecnología y Entretenimiento (ITE)"),
+  
+  Descripcion = c("Promedio ponderado de variables relacionadas con servicios esenciales.",
+                  "Evalúa qué tan amplias son las viviendas.",
+                  "Indica la presencia de electrodomésticos esenciales.",
+                  "Basado en la disponibilidad de medios de transporte.",
+                  "Mide el nivel de acceso a tecnología y servicios digitales."),
+  
+  Formula = c("(Viviendas con energía + agua + drenaje + sanitario) / Viviendas_Part_Habitadas",
+              "(Viviendas con 2+ dormitorios + Porc. viviendas con 3+ cuartos) / Viviendas_Part_Habitadas",
+              "(Viviendas con refri + lavadora + microondas) / Viviendas_Part_Habitadas",
+              "(Viviendas con auto + moto + bicicleta) / Viviendas_Part_Habitadas",
+              "(Viviendas con internet + TV paga + streaming + consola + computadora) /Viviendas_Part_Habitadas")
+)
+
+# Generar la tabla con formato
+indices %>%
+  kable(format = "html", align = "c", caption = "Definiciones de Índices") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+```
+
+
+## Carga de Datos
+
+```{r cargar-datos}
+# Cargar datos
+
+mapa_reyno <- st_read("mapa_reyno.shp")
+reyno_ageb_categorizado <- read.csv("reyno_ageb_categorizado.csv")
+
+# Convertir códigos AGEB a caracteres para la unión
+reyno_ageb_categorizado$AGEB <- as.character(reyno_ageb_categorizado$AGEB)
+mapa_reyno$CVE_AGEB <- as.character(mapa_reyno$CVE_AGEB)
+
+# Unión de datos espaciales con el análisis
+agebs_cross_shp <- mapa_reyno %>%
+  left_join(reyno_ageb_categorizado, by = c("CVE_AGEB" = "AGEB")) %>%
+  select(-ends_with(".y"))
+
+# Transformar a WGS84
+mapa_reynosa_wgs84 <- st_transform(agebs_cross_shp, crs = 4326)
+
+```
+
+
+## Mapas
+
+### Mapa de Score Total
+## Mapa Interactivo con Leaflet
+
+```{r mapa-interactivo-leaflet}
+mi_zona <- st_read("mi_zona.json")
+
+# Asegurarse de que la categoría es un factor para respetar el orden
+mapa_reynosa_wgs84$Categoria_Potencial <- factor(
+  mapa_reynosa_wgs84$Categoria_Potencial,
+  levels = c("Muy Alto Potencial", "Alto Potencial", "Potencial Medio", "Bajo Potencial", "Muy Bajo Potencial")
+)
+
+
+# Definir paleta de colores personalizada con orden
+paleta_colores <- colorFactor(
+  palette = c("#0b2c4a", "#1e4d82", "#4682b4", "#a1c5e8", "#f1f1f1"),
+  domain = mapa_reynosa_wgs84$Categoria_Potencial
+)
+
+# Preparar la información del popup
+mapa_reyno_leaflet <- mapa_reynosa_wgs84 %>%
+  mutate(
+    popup_info = paste(
+      "<strong>Información del AGEB:</strong><br>",
+      "<strong>AGEB:</strong>", CVE_AGEB, "<br>",
+      "<strong>Categoría de Potencial:</strong>", Categoria_Potencial, "<br>",
+      "<strong>Score Total:</strong>", round(Score_Total, 2), "<br>",
+      "<hr>",
+      "<strong>Población Total:</strong>", Pob_Tot, "<br>",
+      "<strong>Densidad de habitantes:</strong>", round(densidad_habitantes,2), "<br>",
+      "<strong>Total Viviendas:</strong>", Total_Viviendas, "<br>",
+      "<strong>Nivel Socioeconómico:</strong>", Nivel_Socioeconomico, "<br>",
+      "<hr>",
+      "<strong>Indicadores:</strong><br>",
+      "<strong>Proporción PEA:</strong>", round(Prop_PEA,2), "<br>",
+      "Tasa de Ocupación de Vivienda: ", round(tasa_ocupacion, 2), "%", "<br>",
+      "Potencial de Mejoras: ", round(Indice_Potencial_Mejoras, 2)
+    )
+  )
+
+# Crear el mapa interactivo
+mapa_leaflet <- leaflet(mapa_reyno_leaflet) %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+  addPolygons(
+    fillColor = ~paleta_colores(Categoria_Potencial),
+    color = "white",
+    weight = 1,
+    opacity = 1,
+    fillOpacity = 0.7,
+    popup = ~popup_info,
+    highlight = highlightOptions(
+      weight = 3,
+      color = "red",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    )
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    pal = paleta_colores,
+    values = ~Categoria_Potencial,
+    title = "Potencial de AGEBs",
+    opacity = 0.7
+  )
+
+# Mostrar el mapa basado en categoría potencial
+mapa_leaflet
+
+# Crear paleta de colores para Score_Total
+paleta_score <- colorNumeric(
+  palette = "YlOrRd",  # Paleta de amarillo a rojo
+  domain = mapa_reyno_leaflet$Score_Total
+)
+
+fill_colores <- paleta_score(mapa_reyno_leaflet$Score_Total)
+popups <- mapa_reyno_leaflet$popup_info
+
+
+# Preparar mapa con Score_Total
+mapa_leaflet_score <- leaflet(mapa_reyno_leaflet) %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+  addPolygons(
+    fillColor = ~paleta_score(Score_Total),
+    color = "white",
+    weight = 1,
+    opacity = 1,
+    fillOpacity = 0.7,
+    popup = ~popup_info,
+    highlight = highlightOptions(
+      weight = 3,
+      color = "blue",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    )
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    pal = paleta_score,
+    values = ~Score_Total,
+    title = "Score Total de AGEBs",
+    opacity = 0.7
+  ) %>%
+  setView(
+    lng = mean(st_coordinates(mapa_reyno_leaflet)[,1]), 
+    lat = mean(st_coordinates(mapa_reyno_leaflet)[,2]), 
+    zoom = 11
+  )
+
+
+# Mostrar el mapa
+mapa_leaflet_score
+
+```
+
+## Análisis de Ventas y Ubicación de Tiendas
+
+En esta sección, integraremos el análisis de ventas por colonia con la ubicación de las sucursales existentes para identificar patrones espaciales y oportunidades de negocio.
+
+```{r cargar-librerias y datos}
+
+# Cargar archivos
+colonias <- read.csv("colonias.csv")
+ventas_colonias <- read.csv("CPxVentaxReynosa.csv", encoding = "latin1")
+
+# Filtrar ventas relevantes
+ventas_filtradas <- ventas_colonias %>%
+  filter(City == "REYNOSA" & Código.Postal != "Sin Registro") %>%
+  mutate(Margen = as.numeric(gsub(" %", "", Margen)))
+
+# Agrupar por colonia
+ventas_por_colonia <- ventas_filtradas %>%
+  group_by(Colonia, `Código.Postal`) %>%
+  summarize(
+    Importe_Total_Venta = sum(`Importe.de.Venta`, na.rm = TRUE),
+    Margen_Promedio = mean(Margen, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Normalizar nombres para cruce
+normalize_text <- function(x) {
+  x <- tolower(x)
+  x <- iconv(x, to="ASCII//TRANSLIT")
+  x <- gsub("[^a-z0-9 ]", "", x)
+  return(x)
+}
+
+ventas_por_colonia$colonia_norm <- normalize_text(ventas_por_colonia$Colonia)
+colonias$colonia_norm <- normalize_text(colonias$colonia)
+colonias$codigo_postal <- as.character(colonias$codigo_postal)
+
+# Escalar columnas
+ventas_por_colonia <- ventas_por_colonia %>%
+  mutate(
+    Importe_Escalado = 100 * (Importe_Total_Venta - min(Importe_Total_Venta, na.rm = TRUE)) /
+      (max(Importe_Total_Venta, na.rm = TRUE) - min(Importe_Total_Venta, na.rm = TRUE)),
+    Margen_Escalado = 100 * (Margen_Promedio - min(Margen_Promedio, na.rm = TRUE)) /
+      (max(Margen_Promedio, na.rm = TRUE) - min(Margen_Promedio, na.rm = TRUE))
+  )
+
+# Join por colonia y código postal
+datos_unidos <- left_join(
+  ventas_por_colonia,
+  colonias %>% select(colonia_norm, codigo_postal, latitud, longitud),
+  by = c("colonia_norm", "Código.Postal" = "codigo_postal")
+)
+
+# Leer sucursales
+Sucursales <- read.csv("Coordenadas_suc.csv")
+# Lista de nuevos nombres
+nuevos_nombres <- c("K", "P", "X", "Y", "Z")
+
+# Asegúrate que tienes el mismo número de filas que nombres nuevos
+Sucursales$Sucursal <- nuevos_nombres[seq_len(nrow(Sucursales))]
+
+Sucursales <- head(Sucursales, n = 5)
+
+```
+
+### Visualización del Mapa de Calor de Ventas
+
+Primero, visualizamos las ventas por colonia utilizando un mapa de calor donde el tamaño y color de los círculos representa el volumen de ventas.
+
+```{r heatmap-ventas}
+# Creamos la paleta de colores basada en los valores de venta ESCALADOS
+pal <- colorNumeric(
+  palette = "YlOrRd",
+  domain = datos_unidos$Importe_Escalado
+)
+
+mapa_ventas <- leaflet() %>%
+  addTiles() %>%
+  setView(lng = -98.2950, lat = 26.0500, zoom = 12) %>%
+  addCircleMarkers(
+    data = datos_unidos,
+    lng = ~longitud,
+    lat = ~latitud,
+    radius = ~Importe_Escalado / 3 + 2,   # <-- Ajustar este valor según visualización
+    color = ~pal(Importe_Escalado),
+    stroke = TRUE,
+    weight = 1,
+    opacity = 1,
+    fillOpacity = 0.7,
+    popup = ~paste0(
+      "<b>Colonia:</b> ", Colonia,
+      "<br><b>Score de Venta:</b> ", round(Importe_Escalado, 2),
+      "<br><b>Score de Margen:</b> ", round(Margen_Escalado, 2)
+    ),
+    group = "Ventas por Colonia"
+  ) %>%
+  addAwesomeMarkers(
+    data = Sucursales,
+    lng = ~Longitud,
+    lat = ~Latitud,
+    icon = awesomeIcons(
+      icon = 'shopping-cart',
+      iconColor = 'white',
+      library = 'fa',
+      markerColor = 'darkblue'
+    ),
+    popup = ~paste0("<b>Sucursal:</b> ", Sucursal),
+    group = "Sucursales Existentes"
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    pal = pal,
+    values = datos_unidos$Importe_Escalado,
+    title = "Score de Venta (0-100)",
+    opacity = 0.7
+  ) %>%
+  addLayersControl(
+    baseGroups = c("OpenStreetMap", "Satélite"),
+    overlayGroups = c("Ventas por Colonia", "Sucursales Existentes"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) %>%
+  addProviderTiles(providers$OpenStreetMap, group = "OpenStreetMap") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satélite")
+
+mapa_ventas
+```
+
+**Interpretación del mapa de calor:**
+
+Este mapa muestra la distribución geográfica de las ventas por colonia en Reynosa. Los círculos más grandes y de color más intenso representan mayores volúmenes de venta. Las sucursales existentes están marcadas con íconos azules de carrito de compras.
+
+### Análisis de Clusterización K-means
+
+A continuación, utilizamos el algoritmo K-means para identificar áreas con potencial para nuevas tiendas basándonos en la distribución espacial de las ventas.
+
+```{r k-means-analisis}
+# Preparamos los datos para clusterización (solo coordenadas)
+datos_coordenadas <- datos_unidos %>%
+  select(longitud, latitud, Importe_Escalado) %>%
+  # Opcionalmente, podemos ponderar por importe de venta
+  mutate(peso = Importe_Escalado / sum(Importe_Escalado))
+
+# Determinamos el número óptimo de clusters usando el método del codo
+# Calculamos la suma de cuadrados dentro del cluster (WSS) para diferentes valores de k
+wss <- numeric(10)
+for (i in 1:10) {
+  km.out <- kmeans(datos_coordenadas[, c("longitud", "latitud")], centers = i, nstart = 25)
+  wss[i] <- km.out$tot.withinss
+}
+
+# Visualizamos el gráfico del codo
+plot(1:10, wss, type = "b", xlab = "Número de Clusters (k)", 
+     ylab = "Suma de cuadrados dentro del cluster", 
+     main = "Método del Codo para determinar k óptimo")
+
+# Realizamos clusterización con k-means usando k=3 (ajustar según el gráfico anterior)
+set.seed(123) # Para reproducibilidad
+k <- 3 # Número de clusters deseados (ajustar según necesidades)
+km <- kmeans(datos_coordenadas[, c("longitud", "latitud")], centers = k, nstart = 25)
+
+# Añadimos el cluster asignado a nuestros datos
+datos_unidos$cluster <- as.integer(km$cluster)  # Cambiado a integer en vez de factor
+
+# Calculamos centros de los clusters (ubicaciones potenciales para nuevas tiendas)
+centros_cluster <- data.frame(
+  cluster = as.integer(1:k),  # Aseguramos que sea integer
+  longitud = km$centers[, "longitud"],
+  latitud = km$centers[, "latitud"]
+)
+
+# Calculamos métricas para cada cluster
+metricas_cluster <- datos_unidos %>%
+  group_by(cluster) %>%
+  summarise(
+    total_ventas = sum(Importe_Escalado),
+    num_colonias = n(),
+    margen_promedio = mean(Margen_Escalado),
+    .groups = 'drop'
+  )
+
+# Mostramos las métricas por cluster en una tabla
+knitr::kable(metricas_cluster, 
+             caption = "Métricas por Cluster",
+             col.names = c("Cluster", "Total Ventas ($)", "Número de Colonias", "Margen Promedio (%)"),
+             digits = c(0, 2, 0, 2))
+
+# Combinamos centros con métricas
+centros_cluster <- centros_cluster %>%
+  left_join(metricas_cluster, by = "cluster")
+```
+
+### Visualización de Clusters y Ubicaciones Potenciales
+
+```{r k-means-mapa}
+ #Mapa con K means
+  
+ #Análisis de clusterización formal para identificar ubicaciones potenciales de tiendas
+  
+  # Preparamos los datos para clusterización (solo coordenadas)
+  datos_coordenadas <- datos_unidos %>%
+  select(longitud, latitud, Importe_Escalado) %>%
+  # Opcionalmente, podemos ponderar por importe de venta
+  mutate(peso = Importe_Escalado / sum(Importe_Escalado))
+
+# Realizamos clusterización con k-means
+# Ajustamos el número de clusters (k) según necesidades (aquí usamos 5 como ejemplo)
+set.seed(123) # Para reproducibilidad
+k <- 3 # Número de clusters deseados
+km <- kmeans(datos_coordenadas[, c("longitud", "latitud")], centers = k)
+
+# Añadimos el cluster asignado a nuestros datos
+datos_unidos$cluster <- as.integer(km$cluster)  # Cambiado a integer
+
+# Calculamos centros de los clusters (ubicaciones potenciales para nuevas tiendas)
+centros_cluster <- data.frame(
+  cluster = as.integer(1:k),  # Aseguramos que sea integer
+  longitud = km$centers[, "longitud"],
+  latitud = km$centers[, "latitud"]
+)
+
+# Calculamos métricas para cada cluster
+metricas_cluster <- datos_unidos %>%
+  group_by(cluster) %>%
+  summarise(
+    total_ventas = sum(Importe_Escalado),
+    num_colonias = n(),
+    margen_promedio = mean(Margen_Escalado),
+    .groups = 'drop'
+  )
+
+# Combinamos centros con métricas
+centros_cluster <- centros_cluster %>%
+  left_join(metricas_cluster, by = "cluster")
+
+# Visualizamos los resultados del análisis k-means en un mapa
+mapa_kmeans <- leaflet() %>%
+  addTiles() %>%
+  setView(lng = -98.2950, lat = 26.0500, zoom = 12) %>%
+  
+  # Añadimos puntos por colonia coloreados por cluster
+  addCircleMarkers(
+    data = datos_unidos,
+    lng = ~longitud, 
+    lat = ~latitud,
+    radius = 5,
+    color = ~colorFactor("Dark2", domain = as.factor(1:k))(as.factor(cluster)),  # Convertimos a factor solo para el color
+    stroke = TRUE,
+    weight = 1,
+    opacity = 0.8,
+    fillOpacity = 0.6,
+    popup = ~paste0("<b>Colonia:</b> ", Colonia,
+                    "<br><b>Cluster:</b> ", cluster,
+                    "<br><b>Importe de Venta:</b> $", formatC(Importe_Escalado, format="f", big.mark=",", digits=2)),
+    group = "Colonias por Cluster"
+  ) %>%
+  
+  # Añadimos sucursales existentes
+  addAwesomeMarkers(
+    data = Sucursales,
+    lng = ~Longitud, 
+    lat = ~Latitud,
+    icon = awesomeIcons(
+      icon = 'shopping-cart',
+      iconColor = 'white',
+      library = 'fa',
+      markerColor = 'darkblue'
+    ),
+    popup = ~paste0("<b>Sucursal:</b> ", Sucursal),
+    group = "Sucursales Existentes"
+  ) %>%
+  
+  # Añadimos ubicaciones sugeridas (centros de clusters)
+  addAwesomeMarkers(
+    data = centros_cluster,
+    lng = ~longitud, 
+    lat = ~latitud,
+    icon = awesomeIcons(
+      icon = 'star',
+      iconColor = 'white',
+      library = 'fa',
+      markerColor = 'green'
+    ),
+    popup = ~paste0("<b>Cluster:</b> ", cluster,
+                    "<br><b>Total Ventas en Área:</b> $", formatC(total_ventas, format="f", big.mark=",", digits=2),
+                    "<br><b>Número de Colonias:</b> ", num_colonias,
+                    "<br><b>Margen Promedio:</b> ", round(margen_promedio, 2), "%"),
+    group = "Ubicaciones Sugeridas"
+  ) %>%
+  
+  # Control para capas
+  addLayersControl(
+    baseGroups = c("OpenStreetMap", "Satélite"),
+    overlayGroups = c("Colonias por Cluster", "Sucursales Existentes", "Ubicaciones Sugeridas"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) %>%
+  addProviderTiles(providers$OpenStreetMap, group = "OpenStreetMap") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satélite")
+
+# Mostramos el mapa k-means
+mapa_kmeans
+```
+
+### Análisis Integrado: Conclusiones y Recomendaciones
+
+```{r distancia-sucursales}
+htmltools::browsable(
+  tagList(
+    div(style = "display: flex; flex-direction: column; width: 100%;",
+      # Primera fila con dos mapas lado a lado
+      div(style = "display: flex; justify-content: space-between; margin-bottom: 20px;",
+        div(mapa_leaflet_score, style = "width: 48%;"),
+        div(mapa_ventas, style = "width: 48%;")
+      ),
+      # Segunda fila con un mapa centrado
+      div(style = "display: flex; justify-content: center;",
+        div(mapa_kmeans, style = "width: 70%;")
+      )
+    )
+  )
+)
+```
+**Conclusiones del Análisis Espacial:**
+1. **Distribución de Ventas:** El mapa de calor muestra que las ventas tienen diferencias en volumen de forma
+significativa para algunas colonias
+
+2. **Clusterización:** El análisis K-means ha identificado 3 clusters principales, cada uno con características distintas
+
+3. **Cobertura de Sucursales:** Al analizar la proximidad entre los centros de clusters y las sucursales existentes, observamos que existe cierta saturación en uno de los clusters mientras que otras areas de la ciudad pueden aun tener oportunidad de ser atendidas
+
+
+Este análisis combina tanto factores demográficos (del estudio previo) como patrones de venta actuales para identificar las ubicaciones óptimas que maximizarían la cobertura geográfica y el potencial de ventas.
+
+```{r mapa_zona_con_popups, message=FALSE, warning=FALSE}
+library(sf)
+library(leaflet)
+library(dplyr)
+
+# Leer el polígono de la zona de interés
+mi_zona <- st_read("mi_zona.json")
+
+# Asegurar que el CRS coincida
+st_crs(mi_zona) <- st_crs(mapa_reynosa_wgs84)
+
+# Filtrar los AGEBs dentro de la zona (intersección espacial)
+agebs_en_zona <- mapa_reynosa_wgs84[st_intersects(mapa_reynosa_wgs84, mi_zona, sparse = FALSE), ]
+
+# Regenerar los popups por si se perdieron al filtrar
+agebs_en_zona <- agebs_en_zona %>%
+  mutate(
+    popup_info = paste0(
+      "<strong>Información del AGEB:</strong><br>",
+      "<strong>AGEB:</strong> ", CVE_AGEB, "<br>",
+      "<strong>Categoría de Potencial:</strong> ", Categoria_Potencial, "<br>",
+      "<strong>Score Total:</strong> ", round(Score_Total, 2), "<br>",
+      "<hr>",
+      "<strong>Población Total:</strong> ", Pob_Tot, "<br>",
+      "<strong>Densidad de habitantes:</strong> ", round(densidad_habitantes, 2), "<br>",
+      "<strong>Total Viviendas:</strong> ", Total_Viviendas, "<br>",
+      "<strong>Nivel Socioeconómico:</strong> ", Nivel_Socioeconomico, "<br>",
+      "<hr>",
+      "<strong>Indicadores:</strong><br>",
+      "<strong>Proporción PEA:</strong> ", round(Prop_PEA, 2), "<br>",
+      "Tasa de Ocupación de Vivienda: ", round(tasa_ocupacion, 2), "%<br>",
+      "Potencial de Mejoras: ", round(Indice_Potencial_Mejoras, 2)
+    )
+  )
+
+# Crear el mapa con popups y zona delimitada
+leaflet(agebs_en_zona) %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+  addPolygons(
+    fillColor = ~paleta_score(Score_Total),
+    color = "white",
+    weight = 1,
+    opacity = 1,
+    fillOpacity = 0.7,
+    popup = ~popup_info,
+    highlight = highlightOptions(
+      weight = 3,
+      color = "blue",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    )
+  ) %>%
+  addPolygons(
+    data = mi_zona,
+    fillColor = NA,
+    color = "blue",
+    weight = 2,
+    opacity = 1,
+    group = "Zona de interés"
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    pal = paleta_score,
+    values = ~Score_Total,
+    title = "Score Total en zona",
+    opacity = 0.7
+  ) %>%
+  setView(
+    lng = mean(st_coordinates(mi_zona)[,1]), 
+    lat = mean(st_coordinates(mi_zona)[,2]), 
+    zoom = 13
+  )
+
+getwd()
+
+library(tidygeocoder)
+
+```
+
+```{r dataframe_agebs_en_zona, message=FALSE, warning=FALSE}
+reyno_ageb_categorizado <- read.csv("C:/Users/Miguel Reyes/Desktop/Supply Chain Data Science Project/reyno_ageb_categorizado")
+register_google(key = Sys.getenv("GOOGLE_API_KEY"))
+mapa_reyno <- st_read("reynosa_map.shp")
+
+# Convertir códigos AGEB a caracteres para la unión
+reyno_ageb_categorizado$AGEB <- as.character(reyno_ageb_categorizado$AGEB)
+mapa_reyno$CVE_AGEB <- as.character(mapa_reyno$CVE_AGEB)
+
+# Unión de datos espaciales con el análisis
+agebs_cross_shp <- mapa_reyno %>%
+  left_join(reyno_ageb_categorizado, by = c("CVE_AGEB" = "AGEB")) %>%
+  select(-ends_with(".y"))
+
+# Transformar a WGS84
+mapa_reynosa_wgs84 <- st_transform(agebs_cross_shp, crs = 4326)
+
+# Filtramos los AGEBs que intersectan con la zona
+agebs_en_zona <- mapa_reynosa_wgs84[st_intersects(mapa_reynosa_wgs84, mi_zona, sparse = FALSE), ]
+
+# Extraemos el centroide de cada AGEB para tener una coordenada representativa
+agebs_en_zona_centroides <- agebs_en_zona %>%
+  mutate(centroide = st_centroid(geometry)) %>%
+  mutate(
+    lon = st_coordinates(centroide)[, 1],
+    lat = st_coordinates(centroide)[, 2]
+  )
+
+# Creamos un dataframe limpio con los campos clave
+df_agebs_en_zona <- agebs_en_zona_centroides %>%
+  st_drop_geometry() %>%
+  select(CVE_AGEB, Categoria_Potencial, Pob_Tot, Score_Total, lon, lat)
+
+# Mostrar el dataframe
+df_agebs_en_zona
+
+library(tidygeocoder)
+
+# Solo seleccionamos lat/lon y el CVE_AGEB para no sobrecargar
+df_coords <- df_agebs_en_zona %>%
+  select(CVE_AGEB, lat, lon)
+
+# Realizar geocodificación inversa (batch limitado a 100 consultas por minuto)
+df_con_colonias <- df_coords %>%
+  reverse_geocode(
+    lat = lat,
+    long = lon,
+    method = 'osm', # usa Nominatim
+    full_results = TRUE
+  )
+
+# Mostrar el resultado con dirección completa (puedes extraer barrio o localidad)
+head(df_con_colonias)
+library(ggmap)
+
+# 1. Geocodificación inversa para obtener dirección completa
+df_google <- df_coords %>%
+  mutate(
+    google_result = mapply(function(lat, lon) {
+      result <- revgeocode(c(lon, lat), output = "all")
+      # Para evitar exceder límites de la API
+      Sys.sleep(0.2)
+      return(result)
+    }, lat, lon, SIMPLIFY = FALSE)
+  )
+
+# 2. Extraer información básica de colonias y códigos postales
+df_google <- df_google %>%
+  mutate(
+    colonia = sapply(google_result, function(res) {
+      for(comp in res$results[[1]]$address_components) {
+        if("neighborhood" %in% comp$types || "sublocality" %in% comp$types) {
+          return(comp$long_name)
+        }
+      }
+      return(NA)
+    }),
+    codigo_postal = sapply(google_result, function(res) {
+      for(comp in res$results[[1]]$address_components) {
+        if("postal_code" %in% comp$types) {
+          return(comp$long_name)
+        }
+      }
+      return(NA)
+    }),
+    # Guardar dirección completa para análisis
+    direccion_completa = sapply(google_result, function(res) {
+      return(res$results[[1]]$formatted_address)
+    })
+  )
+
+# 3. Mejorar la extracción de colonias buscando en más tipos de componentes
+df_google <- df_google %>%
+  mutate(
+    colonia_mejorada = sapply(google_result, function(res) {
+      # Primero intentamos con neighborhood o sublocality
+      for(comp in res$results[[1]]$address_components) {
+        if("neighborhood" %in% comp$types || "sublocality" %in% comp$types || 
+           "sublocality_level_1" %in% comp$types) {
+          return(comp$long_name)
+        }
+      }
+      
+      # Si no encontramos, buscamos en los componentes de dirección formateada
+      formatted_address <- res$results[[1]]$formatted_address
+      parts <- strsplit(formatted_address, ",")[[1]]
+      
+      # La colonia suele estar en la segunda o tercera parte
+      if (length(parts) >= 3) {
+        # Limpiamos espacios y probamos con la segunda parte
+        potential_colonia <- trimws(parts[2])
+        # Verificamos que no sea el nombre de la ciudad
+        if (!grepl("Reynosa", potential_colonia, ignore.case = TRUE) && 
+            !grepl("Tamaulipas", potential_colonia, ignore.case = TRUE)) {
+          return(potential_colonia)
+        }
+      }
+      
+      return(NA)
+    })
+  )
+
+# 4. Usar la colonia mejorada si está disponible, de lo contrario usar la original
+df_google <- df_google %>%
+  mutate(
+    colonia_final = ifelse(is.na(colonia_mejorada), colonia, colonia_mejorada)
+  )
+
+# 5. Para los puntos que todavía tienen NA, asignar colonia por proximidad
+library(sf)
+
+# Convertir a objeto espacial
+df_sf <- df_google %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# En lugar de convertir todo el dataframe a objeto espacial,
+# podemos crear una copia y hacer los cálculos de proximidad directamente
+
+for (i in 1:nrow(df_google)) {
+  if (is.na(df_google$colonia_final[i])) {
+    # Filtrar puntos con colonia conocida
+    puntos_con_colonia <- df_google[!is.na(df_google$colonia_final),]
+    
+    if (nrow(puntos_con_colonia) > 0) {
+      # Calcular distancias euclidianas (aproximación simple)
+      distancias <- sqrt((df_google$lat[i] - puntos_con_colonia$lat)^2 + 
+                         (df_google$lon[i] - puntos_con_colonia$lon)^2)
+      
+      # Encontrar el índice del más cercano
+      idx_cercano <- which.min(distancias)
+      
+      # Asignar la colonia del punto más cercano
+      df_google$colonia_final[i] <- puntos_con_colonia$colonia_final[idx_cercano]
+    }
+  }
+}
+
+# Ya tenemos todo en el dataframe original, no necesitamos conversión
+df_final <- df_google %>%
+  select(CVE_AGEB, lat, lon, colonia_final, codigo_postal, direccion_completa)
+
+# 7. Verificar distribución de colonias final
+table(df_final$colonia_final, useNA = "ifany")
+
+# 8. Unir con el dataset original si es necesario
+df_completo <- df_agebs_en_zona %>%
+  left_join(df_final, by = "CVE_AGEB")
+
+# 9. Guardar el resultado
+write.csv(df_completo, "agebs_con_colonias_completo.csv", row.names = FALSE)
+
+# 10. Leer el polígono de la zona de interés
+mi_zona <- st_read("mi_zona.json")
+
+# 11. Asegurar que el CRS coincida
+st_crs(mi_zona) <- st_crs(mapa_reynosa_wgs84)
+
+# 12. Visualización incluyendo la zona de interés
+library(leaflet)
+library(RColorBrewer)
+
+# Crear paleta de colores para las colonias
+colores <- colorFactor(
+  palette = brewer.pal(min(length(unique(df_final$colonia_final)), 12), "Set3"),
+  domain = df_final$colonia_final
+)
+
+# Crear mapa con marcadores de AGEBs y polígono de la zona
+mapa_zona <- leaflet() %>%
+  addTiles() %>%
+  # Agregar el polígono de la zona de interés
+  addPolygons(
+    data = mi_zona,
+    fillColor = "transparent",
+    color = "red",
+    weight = 3,
+    opacity = 1,
+    fillOpacity = 0.1,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      fillOpacity = 0.2,
+      bringToFront = TRUE
+    )
+  ) %>%
+  # Agregar los marcadores de los AGEBs con colonias
+  addCircleMarkers(
+    data = df_final,
+    lng = ~lon, 
+    lat = ~lat,
+    color = ~colores(colonia_final),
+    radius = 6,
+    opacity = 0.8,
+    popup = ~paste(
+      "<strong>AGEB:</strong>", CVE_AGEB, 
+      "<br><strong>Colonia:</strong>", colonia_final,
+      "<br><strong>CP:</strong>", codigo_postal
+    )
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    pal = colores,
+    values = df_final$colonia_final,
+    title = "Colonias"
+  )
+
+# Mostrar mapa
+mapa_zona
+```
