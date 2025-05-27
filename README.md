@@ -37,34 +37,34 @@ Se centra en la ciudad de Reynosa, Tamaulipas, México, con el objetivo de **ide
 ## 🗂️ Outputs visuales del análisis
 
 ### 1. Tabla de clasificación socioeconómica (NSE)
-![Tabla NSE](images/Tabla_clasificación_SE.png)
+![Tabla NSE](Ventas_AGEBS/Tabla_clasificación_SE.png)
 
 ### 2. Tabla de componentes del score total
-![Componentes Score](images/Tabla_score_total.png)
+![Componentes Score](Ventas_AGEBS/Tabla_score_total.png)
 
 ### 3. Tabla de índices base
-![Índices Base](images/Tabla_índices_base.png)
+![Índices Base](Ventas_AGEBS/Tabla_índices_base.png)
 
 ### 4. Mapa potencial de AGEBs por categoría
-![Mapa Potencial](images/Mapa_categorizado_potencial.png)
+![Mapa Potencial](Ventas_AGEBS/Mapa_categorizado_potencial.png)
 
 ### 5. Mapa de calor basado en score total
-![Mapa Calor Score](images/Mapa_de_calor_scoretotal.png)
+![Mapa Calor Score](Ventas_AGEBS/Mapa_de_calor_scoretotal.png)
 
 ### 6. Mapa de ventas (heatmap interactivo)
-![Heatmap Ventas](images/Venta_geoespacial_mapa_calor.png)
+![Heatmap Ventas](Ventas_AGEBS/Venta_geoespacial_mapa_calor.png)
 
 ### 7. Gráfico del método del codo (k óptimo)
-![Codo Clusters](images/Método_del_codo.png)
+![Codo Clusters](Ventas_AGEBS/Método_del_codo.png)
 
 ### 8. Visualización de clusters y sucursales
-![Clusters KMeans](images/Clusterización_locación_sugerida.png)
+![Clusters KMeans](Ventas_AGEBS/Clusterización_locación_sugerida.png)
 
 ### 9. Geocodificación inversa para AGEBs de interés (colonias identificadas)
-![Geocodificación Colonias](images/Geodificación_inversa_1.png)
+![Geocodificación Colonias](Ventas_AGEBS/Geodificación_inversa_1.png)
 
 ### 10. Geocodificación inversa para AGEBs de interés (colonias identificadas2)
-![Geocodificación Colonias](images/Geodificación_inversa_2.png)
+![Geocodificación Colonias](Ventas_AGEBS/Geodificación_inversa_2.png)
 
 ---
 
