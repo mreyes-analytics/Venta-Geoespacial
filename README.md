@@ -14,7 +14,7 @@ Análisis geoespacial de AGEBs en Reynosa para identificar ubicaciones óptimas 
 ## 📌 Presentación del análisis y visión
 
 Este proyecto explora el potencial del análisis espacial y comercial usando **R, visualización avanzada y técnicas de machine learning**.  
-Se centra en la ciudad de Reynosa, Tamaulipas, México, con el objetivo de **identificar zonas óptimas para expansión de tiendas tipo express**, integrando datos socioeconómicos del INEGI (Censo 2020) y ventas comerciales.
+Se centra en la ciudad de Reynosa, Tamaulipas, México, con el objetivo de **identificar zonas óptimas para futuras aperturas**, integrando datos socioeconómicos del INEGI (Censo 2020) y ventas comerciales.
 
 > **Visión personal:**  
 > Mi objetivo con este trabajo fue mostrar el potencial de las herramientas de análisis de datos (RStudio, ML, APIs) en un entorno donde normalmente no se exploran.  
@@ -37,31 +37,34 @@ Se centra en la ciudad de Reynosa, Tamaulipas, México, con el objetivo de **ide
 ## 🗂️ Outputs visuales del análisis
 
 ### 1. Tabla de clasificación socioeconómica (NSE)
-![Tabla NSE](images/tabla_nse.png)
+![Tabla NSE](images/Tabla_clasificación_SE.png)
 
 ### 2. Tabla de componentes del score total
-![Componentes Score](images/tabla_score_total.png)
+![Componentes Score](images/Tabla_score_total.png)
 
 ### 3. Tabla de índices base
-![Índices Base](images/tabla_indices_base.png)
+![Índices Base](images/Tabla_índices_base.png)
 
 ### 4. Mapa potencial de AGEBs por categoría
-![Mapa Potencial](images/mapa_potencial_agebs.png)
+![Mapa Potencial](images/Mapa_categorizado_potencial.png)
 
 ### 5. Mapa de calor basado en score total
-![Mapa Calor Score](images/mapa_calor_score.png)
+![Mapa Calor Score](images/Mapa_de_calor_scoretotal.png)
 
 ### 6. Mapa de ventas (heatmap interactivo)
-![Heatmap Ventas](images/heatmap_ventas_colonia.png)
+![Heatmap Ventas](images/Venta_geoespacial_mapa_calor.png)
 
 ### 7. Gráfico del método del codo (k óptimo)
-![Codo Clusters](images/codo_clusters.png)
+![Codo Clusters](images/Método_del_codo.png)
 
 ### 8. Visualización de clusters y sucursales
-![Clusters KMeans](images/clusters_kmeans.png)
+![Clusters KMeans](images/Clusterización_locación_sugerida.png)
 
 ### 9. Geocodificación inversa para AGEBs de interés (colonias identificadas)
-![Geocodificación Colonias](images/mapa_zona_geocodificacion.png)
+![Geocodificación Colonias](images/Geodificación_inversa_1.png)
+
+### 10. Geocodificación inversa para AGEBs de interés (colonias identificadas2)
+![Geocodificación Colonias](images/Geodificación_inversa_2.png)
 
 ---
 
@@ -111,4 +114,10 @@ El flujo completo fue posible gracias al apoyo de inteligencia artificial genera
 Aprendí sobre el uso práctico de métodos de clustering (k-means), el método del codo, integración de geocodificación inversa y visualización avanzada para problemas reales de negocio.
 
 Espero que este trabajo inspire y motive a profesionalizar la analítica de datos y el uso de tecnología en la organización.
+
+## 📧 Contacto
+
+reyes061295@gmail.com  
+[LinkedIn](https://www.linkedin.com/in/marb951206/) | [GitHub](https://github.com/mreyes-analytics)
+
 
